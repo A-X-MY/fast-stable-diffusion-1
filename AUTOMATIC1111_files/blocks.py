@@ -442,37 +442,25 @@ def convert_component_dict_to_list(
 @document("launch", "queue", "integrate", "load")
 class Blocks(BlockContext):
     """
-    Blocks is Gradio's low-level API that allows you to create more custom web
-    applications and demos than Interfaces (yet still entirely in Python).
+    Blocks是Gradio的低级API，允许您创建比Interfaces更为自定义的Web应用程序和演示文稿（但仍完全使用Python）。与Interface类相比，Blocks提供了更多的灵活性和控制：
+(1)组件布局 (2)触发函数执行的事件 (3)数据流（例如，输入可以触发输出，这些输出可以触发下一级输出）。
+Blocks还提供了将相关演示文稿分组在一起（例如使用标签）的方法。
+Blocks的基本用法如下：创建一个Blocks对象，然后将其用作上下文(with语句)，然后在Blocks上下文中定义布局、组件或事件。最后，调用launch()方法启动演示文稿。
+以下是一个示例：
 
-
-    Compared to the Interface class, Blocks offers more flexibility and control over:
-    (1) the layout of components (2) the events that
-    trigger the execution of functions (3) data flows (e.g. inputs can trigger outputs,
-    which can trigger the next level of outputs). Blocks also offers ways to group
-    together related demos such as with tabs.
-
-
-    The basic usage of Blocks is as follows: create a Blocks object, then use it as a
-    context (with the "with" statement), and then define layouts, components, or events
-    within the Blocks context. Finally, call the launch() method to launch the demo.
-
-    Example:
-        import gradio as gr
-        def update(name):
-            return f"Welcome to Gradio, {name}!"
-
-        with gr.Blocks() as demo:
-            gr.Markdown("Start typing below and then click **Run** to see the output.")
-            with gr.Row():
-                inp = gr.Textbox(placeholder="What is your name?")
-                out = gr.Textbox()
-            btn = gr.Button("Run")
-            btn.click(fn=update, inputs=inp, outputs=out)
-
-        demo.launch()
-    Demos: blocks_hello, blocks_flipper, blocks_speech_text_sentiment, generate_english_german, sound_alert
-    Guides: blocks_and_event_listeners, controlling_layout, state_in_blocks, custom_CSS_and_JS, custom_interpretations_with_blocks, using_blocks_like_functions
+    import gradio as gr
+    def update(name):
+        return f"Welcome to Gradio, {name}!"
+    with gr.Blocks() as demo:
+        gr.Markdown("Start typing below and then click **Run** to see the output.")
+        with gr.Row():
+            inp = gr.Textbox(placeholder="What is your name?")
+            out = gr.Textbox()
+        btn = gr.Button("Run")
+        btn.click(fn=update, inputs=inp, outputs=out)
+    demo.launch()
+演示文稿: blocks_hello, blocks_flipper, blocks_speech_text_sentiment, generate_english_german, sound_alert
+指南: blocks_and_event_listeners, controlling_layout, state_in_blocks, custom_CSS_and_JS, custom_interpretations_with_blocks, using_blocks_like_functions
     """
 
     def __init__(
@@ -485,13 +473,13 @@ class Blocks(BlockContext):
         **kwargs,
     ):
         """
-        Parameters:
-            analytics_enabled: whether to allow basic telemetry. If None, will use GRADIO_ANALYTICS_ENABLED environment variable or default to True.
-            mode: a human-friendly name for the kind of Blocks or Interface being created.
-            title: The tab title to display when this is opened in a browser window.
-            css: custom css or path to custom css file to apply to entire Blocks
+        参数：
+analytics_enabled: 是否允许基本遥测。如果为None，则使用GRADIO_ANALYTICS_ENABLED环境变量或默认为True。
+mode：用于创建Blocks或Interface的人类友好名称。
+title：在浏览器窗口中打开时要显示的选项卡标题。
+css：自定义css或应用于整个Blocks的自定义css文件的路径。
         """
-        # Cleanup shared parameters with Interface #TODO: is this part still necessary after Interface with Blocks?
+        # 清理Interface的共享参数#TODO：在使用具有Blocks的Interface之后，此部分是否仍然必要？
         self.limiter = None
         self.save_to = None
         if theme is None:
@@ -577,12 +565,12 @@ class Blocks(BlockContext):
         root_url: str | None = None,
     ) -> Blocks:
         """
-        Factory method that creates a Blocks from a config and list of functions.
+        工厂方法，用于从配置和函数列表创建Blocks。
 
-        Parameters:
-        config: a dictionary containing the configuration of the Blocks.
-        fns: a list of functions that are used in the Blocks. Must be in the same order as the dependencies in the config.
-        root_url: an optional root url to use for the components in the Blocks. Allows serving files from an external URL.
+    参数：
+    config：包含Blocks配置的字典。
+    fns：在Blocks中使用的函数列表。必须按照配置中的依赖项顺序排列。
+    root_url：可选的根URL，用于Blocks中的组件。允许从外部URL提供文件。
         """
         config = copy.deepcopy(config)
         components_config = config["components"]
@@ -593,14 +581,14 @@ class Blocks(BlockContext):
                 if block_config["id"] == id:
                     break
             else:
-                raise ValueError("Cannot find block with id {}".format(id))
+                raise ValueError("无法找到id为{}的块".format(id))
             cls = component_or_layout_class(block_config["type"])
             block_config["props"].pop("type", None)
             block_config["props"].pop("name", None)
             style = block_config["props"].pop("style", None)
             if block_config["props"].get("root_url") is None and root_url:
                 block_config["props"]["root_url"] = root_url + "/"
-            # Any component has already processed its initial value, so we skip that step here
+              # 任何组件已经处理了其初始值，因此我们在这里跳过该步骤
             block = cls(**block_config["props"], _skip_init_processing=True)
             if style and isinstance(block, components.IOComponent):
                 block.style(**style)
@@ -1025,17 +1013,17 @@ class Blocks(BlockContext):
         event_data: EventData | None = None,
     ) -> Dict[str, Any]:
         """
-        Processes API calls from the frontend. First preprocesses the data,
-        then runs the relevant function, then postprocesses the output.
-        Parameters:
-            fn_index: Index of function to run.
-            inputs: input data received from the frontend
-            username: name of user if authentication is set up (not used)
-            state: data stored from stateful components for session (key is input block id)
-            iterators: the in-progress iterators for each generator function (key is function index)
-            event_id: id of event that triggered this API call
-            event_data: data associated with the event trigger itself
-        Returns: None
+        处理来自前端的API调用。首先预处理数据，然后运行相关函数，最后对输出进行后处理。
+
+    参数：
+        fn_index：要运行的函数索引。
+        inputs：从前端接收到的输入数据
+        username：如果设置了身份验证，则为用户名称（未使用）
+        state：为会话存储的数据来自有状态组件（键是输入块id）
+        iterators：每个生成器函数的正在进行的迭代器（键为函数索引）
+        event_id：触发此API调用的事件ID
+        event_data：与事件触发本身相关联的数据
+    返回：无
         """
         block_fn = self.fns[fn_index]
         batch = self.dependencies[fn_index]["batch"]
@@ -1184,40 +1172,38 @@ class Blocks(BlockContext):
         **kwargs,
     ) -> Blocks | Dict[str, Any] | None:
         """
-        For reverse compatibility reasons, this is both a class method and an instance
-        method, the two of which, confusingly, do two completely different things.
+       出于反向兼容性原因，这既是一个类方法，也是一个实例方法，它们两个令人困惑的地方是它们执行完全不同的操作。
+
+    类方法：从Hugging Face Spaces repo加载演示文稿并在本地创建它并返回块实例。等效于gradio.Interface.load（）
 
 
-        Class method: loads a demo from a Hugging Face Spaces repo and creates it locally and returns a block instance. Equivalent to gradio.Interface.load()
-
-
-        Instance method: adds event that runs as soon as the demo loads in the browser. Example usage below.
-        Parameters:
-            name: Class Method - the name of the model (e.g. "gpt2" or "facebook/bart-base") or space (e.g. "flax-community/spanish-gpt2"), can include the `src` as prefix (e.g. "models/facebook/bart-base")
-            src: Class Method - the source of the model: `models` or `spaces` (or leave empty if source is provided as a prefix in `name`)
-            api_key: Class Method - optional access token for loading private Hugging Face Hub models or spaces. Find your token here: https://huggingface.co/settings/tokens
-            alias: Class Method - optional string used as the name of the loaded model instead of the default name (only applies if loading a Space running Gradio 2.x)
-            fn: Instance Method - the function to wrap an interface around. Often a machine learning model's prediction function. Each parameter of the function corresponds to one input component, and the function should return a single value or a tuple of values, with each element in the tuple corresponding to one output component.
-            inputs: Instance Method - List of gradio.components to use as inputs. If the function takes no inputs, this should be an empty list.
-            outputs: Instance Method - List of gradio.components to use as inputs. If the function returns no outputs, this should be an empty list.
-            api_name: Instance Method - Defining this parameter exposes the endpoint in the api docs
-            scroll_to_output: Instance Method - If True, will scroll to output component on completion
-            show_progress: Instance Method - If True, will show progress animation while pending
-            queue: Instance Method - If True, will place the request on the queue, if the queue exists
-            batch: Instance Method - If True, then the function should process a batch of inputs, meaning that it should accept a list of input values for each parameter. The lists should be of equal length (and be up to length `max_batch_size`). The function is then *required* to return a tuple of lists (even if there is only 1 output component), with each list in the tuple corresponding to one output component.
-            max_batch_size: Instance Method - Maximum number of inputs to batch together if this is called from the queue (only relevant if batch=True)
-            preprocess: Instance Method - If False, will not run preprocessing of component data before running 'fn' (e.g. leaving it as a base64 string if this method is called with the `Image` component).
-            postprocess: Instance Method - If False, will not run postprocessing of component data before returning 'fn' output to the browser.
-            every: Instance Method - Run this event 'every' number of seconds. Interpreted in seconds. Queue must be enabled.
-        Example:
-            import gradio as gr
-            import datetime
-            with gr.Blocks() as demo:
-                def get_time():
-                    return datetime.datetime.now().time()
-                dt = gr.Textbox(label="Current time")
-                demo.load(get_time, inputs=None, outputs=dt)
-            demo.launch()
+    实例方法：添加事件，在演示文稿在浏览器中加载时立即运行。以下是示例用法。
+    参数：
+        name: 类方法 - 模型名称（例如“gpt2”或“facebook / bart-base”）或空间名称（例如“flax-community / spanish-gpt2”），可以包括src作为前缀（例如“models / facebook / bart-base”）
+        src: 类方法 - 型号来源：“models”或“spaces”（如果source作为前缀提供在“name”中，请留空）
+        api_key: 类方法 - 用于加载私有Hugging Face Hub模型或空间的可选访问令牌。在此找到您的令牌：https://huggingface.co/settings/tokens
+        alias: 类方法 - 可选字符串，用作加载的模型名称而不是默认名称（仅适用于加载运行Gradio 2.x的Space）
+        fn: 实例方法 - 要包装界面的函数。通常是机器学习模型的预测函数。函数的每个参数对应于一个输入组件，并且函数应返回单个值或元组值，其中元组中的每个元素对应于一个输出组件。
+        inputs: 实例方法 - 要用作输入的gradio.components列表。如果函数不接受任何输入，则应该是一个空列表。
+        outputs: 实例方法 - 要用作输入的gradio.components列表。如果函数不返回任何输出，则应该是一个空列表。
+        api_name: 实例方法 - 定义此参数将在API文档中公开端点
+        scroll_to_output: 实例方法 - 如果为True，则会滚动到输出组件以完成
+        show_progress: 实例方法 - 如果为True，则会在等待期间显示进度动画
+        queue: 实例方法 - 如果为True，则会将请求放置在队列中（如果队列存在）
+        batch: 实例方法 - 如果为True，则函数应处理一批输入，这意味着它应接受每个参数的输入值列表。列表应具有相等的长度（并且最长为'max_batch_size'）。然后*必须*返回元组列表（即使只有1个输出组件），元组中的每个列表都对应于一个输出组件。
+        max_batch_size: 实例方法 - 如果从队列调用此方法，则最多将输入批处理在一起的数量（仅当batch=True时相关）
+        preprocess: 实例方法 - 如果为False，则在运行'fn'之前不会运行组件数据的预处理（例如，如果使用'Image'组件调用此方法，则将其保留为base64字符串）。
+        postprocess: 实例方法 - 如果为False，则在将'fn'输出返回到浏览器之前不会对组件数据进行后处理。
+        every: 实例方法 - 每'every'秒运行此事件。以秒为单位解释。必须启用队列。
+    示例：
+        import gradio as gr
+        import datetime
+        with gr.Blocks() as demo:
+            def get_time():
+                return datetime.datetime.now().time()
+            dt = gr.Textbox(label="Current time")
+            demo.load(get_time, inputs=None, outputs=dt)
+        demo.launch()
         """
         # _js: Optional frontend js method to run before running 'fn'. Input arguments for js method are values of 'inputs' and 'outputs', return should be a list of values for output components.
         if isinstance(self_or_cls, type):
