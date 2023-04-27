@@ -79,11 +79,11 @@ class Block:
 
     def render(self):
         """
-        Adds self into appropriate BlockContext
+        将自身添加到适当的BlockContext中。
         """
         if Context.root_block is not None and self._id in Context.root_block.blocks:
             raise DuplicateBlockError(
-                f"A block with id: {self._id} has already been rendered in the current Blocks."
+                f"具有id {self._id} 的块已在当前Blocks中呈现。"
             )
         if Context.block is not None:
             Context.block.add(self)
@@ -95,8 +95,8 @@ class Block:
 
     def unrender(self):
         """
-        Removes self from BlockContext if it has been rendered (otherwise does nothing).
-        Removes self from the layout and collection of blocks, but does not delete any event triggers.
+        如果已呈现，则从BlockContext中删除自身（否则不执行任何操作）。
+    从布局和块的集合中删除自身，但不删除任何事件触发器。
         """
         if Context.block is not None:
             try:
@@ -150,29 +150,29 @@ class Block:
         trigger_only_on_success: bool = False,
     ) -> Tuple[Dict[str, Any], int]:
         """
-        Adds an event to the component's dependencies.
-        Parameters:
-            event_name: event name
-            fn: Callable function
-            inputs: input list
-            outputs: output list
-            preprocess: whether to run the preprocess methods of components
-            postprocess: whether to run the postprocess methods of components
-            scroll_to_output: whether to scroll to output of dependency on trigger
-            show_progress: whether to show progress animation while running.
-            api_name: Defining this parameter exposes the endpoint in the api docs
-            js: Optional frontend js method to run before running 'fn'. Input arguments for js method are values of 'inputs' and 'outputs', return should be a list of values for output components
-            no_target: if True, sets "targets" to [], used for Blocks "load" event
-            batch: whether this function takes in a batch of inputs
-            max_batch_size: the maximum batch size to send to the function
-            cancels: a list of other events to cancel when this event is triggered. For example, setting cancels=[click_event] will cancel the click_event, where click_event is the return value of another components .click method.
-            every: Run this event 'every' number of seconds while the client connection is open. Interpreted in seconds. Queue must be enabled.
-            collects_event_data: whether to collect event data for this event
-            trigger_after: if set, this event will be triggered after 'trigger_after' function index
-            trigger_only_on_success: if True, this event will only be triggered if the previous event was successful (only applies if `trigger_after` is set)
-        Returns: dependency information, dependency index
+        添加事件到组件的依赖项中。
+    参数:
+        event_name: 事件名称
+        fn: 可调用函数
+        inputs: 输入列表
+        outputs: 输出列表
+        preprocess: 是否运行组件的预处理方法
+        postprocess: 是否运行组件的后处理方法
+        scroll_to_output: 是否在触发时滚动到依赖项的输出
+        show_progress: 运行时是否显示进度动画。
+        api_name: 定义此参数将在api文档中公开端点
+        js: 可选前端js方法，在运行'fn'之前运行。js方法的输入参数是'inputs'和'outputs'的值，返回值应是输出组件的值列表
+        no_target: 如果为True，则将"targets"设置为[]，用于Blocks "load"事件
+        batch: 是否该函数接受批量输入
+        max_batch_size: 发送给函数的最大批处理大小
+        cancels: 另一个事件列表，用于当触发此事件时取消其他事件。例如，设置cancels = [click_event]将取消click_event，其中click_event是另一个组件的返回值。.click方法。
+        every: 在客户端连接打开的同时运行此事件的“每个”秒数。以秒为单位解释。必须启用队列。
+        collects_event_data: 是否收集此事件的事件数据
+        trigger_after: 如果设置了，此事件将在'trigger_after'函数索引之后触发。
+        trigger_only_on_success: 如果为True，则仅在先前事件成功完成后触发此事件（仅适用于`trigger_after`已设置的情况）
+    返回: 依赖信息，依赖索引
         """
-        # Support for singular parameter
+        # 支持单数参数
         if isinstance(inputs, set):
             inputs_as_dict = True
             inputs = sorted(inputs, key=lambda x: x._id)
@@ -196,20 +196,20 @@ class Block:
 
         if Context.root_block is None:
             raise AttributeError(
-                f"{event_name}() and other events can only be called within a Blocks context."
+                f"event_name}()和其他事件只能在Blocks上下文中调用。"
             )
         if every is not None and every <= 0:
-            raise ValueError("Parameter every must be positive or None")
+            raise ValueError("每个参数必须是正数或空值")
         if every and batch:
             raise ValueError(
-                f"Cannot run {event_name} event in a batch and every {every} seconds. "
-                "Either batch is True or every is non-zero but not both."
+                f"无法在批处理模式下运行{event_name}事件，且每 {every} 秒运行。 "
+                "batch应为True，而every应为非零但不是两者都。"
             )
 
         if every and fn:
             fn = get_continuous_fn(fn, every)
         elif every:
-            raise ValueError("Cannot set a value for `every` without a `fn`.")
+            raise ValueError("`fn`为空时不能设置`every`的值。")
 
         _, progress_index, event_data_index = (
             special_args(fn) if fn else (None, None, None)
@@ -231,7 +231,7 @@ class Block:
             )
             if not (api_name == api_name_):
                 warnings.warn(
-                    "api_name {} already exists, using {}".format(api_name, api_name_)
+                    "api_name {}已经存在，使用{}".format(api_name, api_name_)
                 )
                 api_name = api_name_
 
@@ -1264,24 +1264,24 @@ class Blocks(BlockContext):
         max_size: int | None = None,
     ):
         """
-        You can control the rate of processed requests by creating a queue. This will allow you to set the number of requests to be processed at one time, and will let users know their position in the queue.
-        Parameters:
-            concurrency_count: Number of worker threads that will be processing requests from the queue concurrently. Increasing this number will increase the rate at which requests are processed, but will also increase the memory usage of the queue.
-            status_update_rate: If "auto", Queue will send status estimations to all clients whenever a job is finished. Otherwise Queue will send status at regular intervals set by this parameter as the number of seconds.
-            client_position_to_load_data: DEPRECATED. This parameter is deprecated and has no effect.
-            default_enabled: Deprecated and has no effect.
-            api_open: If True, the REST routes of the backend will be open, allowing requests made directly to those endpoints to skip the queue.
-            max_size: The maximum number of events the queue will store at any given moment. If the queue is full, new events will not be added and a user will receive a message saying that the queue is full. If None, the queue size will be unlimited.
-        Example: (Blocks)
-            with gr.Blocks() as demo:
-                button = gr.Button(label="Generate Image")
-                button.click(fn=image_generator, inputs=gr.Textbox(), outputs=gr.Image())
-            demo.queue(concurrency_count=3)
-            demo.launch()
-        Example: (Interface)
-            demo = gr.Interface(image_generator, gr.Textbox(), gr.Image())
-            demo.queue(concurrency_count=3)
-            demo.launch()
+       你可以通过创建一个队列来控制处理请求的速率。这将允许你设置一次处理的请求数量，并让用户知道他们在队列中的位置。
+参数:
+concurrency_count: 并发处理请求的工作线程数量。增加此数字将增加处理请求的速度，但也会增加队列的内存使用量。
+status_update_rate: 如果为“auto”，Queue将在每个作业完成时向所有客户端发送状态估计值。否则，Queue将按照此参数设置的时间间隔定期发送状态，单位为秒。
+client_position_to_load_data: 已弃用。该参数已被弃用，不再起作用。
+default_enabled: 已弃用。该参数已被弃用，不再起作用。
+api_open: 如果为True，则后端的REST路由将是开放的，允许直接对这些端点进行请求而跳过队列。
+max_size: 队列在任何时刻存储的事件的最大数量。如果队列已满，则不会添加新事件，并且用户将收到一条消息，说明队列已满。如果为None，则队列大小将是无限的。
+示例：（Blocks）
+with gr.Blocks() as demo:
+button = gr.Button(label="Generate Image")
+button.click(fn=image_generator, inputs=gr.Textbox(), outputs=gr.Image())
+demo.queue(concurrency_count=3)
+demo.launch()
+示例：(Interface)
+demo = gr.Interface(image_generator, gr.Textbox(), gr.Image())
+demo.queue(concurrency_count=3)
+demo.launch()
         """
         if default_enabled is not None:
             warnings.warn(
@@ -1331,51 +1331,32 @@ class Blocks(BlockContext):
         _frontend: bool = True,
     ) -> Tuple[FastAPI, str, str]:
         """
-        Launches a simple web server that serves the demo. Can also be used to create a
-        public link used by anyone to access the demo from their browser by setting share=True.
+       启动一个简单的Web服务器，用于提供演示。还可以通过设置share=True来创建一个供任何人从其浏览器访问演示的公共链接。
 
-        Parameters:
-            inline: whether to display in the interface inline in an iframe. Defaults to True in python notebooks; False otherwise.
-            inbrowser: whether to automatically launch the interface in a new tab on the default browser.
-            share: whether to create a publicly shareable link for the interface. Creates an SSH tunnel to make your UI accessible from anywhere. If not provided, it is set to False by default every time, except when running in Google Colab. When localhost is not accessible (e.g. Google Colab), setting share=False is not supported.
-            debug: if True, blocks the main thread from running. If running in Google Colab, this is needed to print the errors in the cell output.
-            auth: If provided, username and password (or list of username-password tuples) required to access interface. Can also provide function that takes username and password and returns True if valid login.
-            auth_message: If provided, HTML message provided on login page.
-            prevent_thread_lock: If True, the interface will block the main thread while the server is running.
-            show_error: If True, any errors in the interface will be displayed in an alert modal and printed in the browser console log
-            server_port: will start gradio app on this port (if available). Can be set by environment variable GRADIO_SERVER_PORT. If None, will search for an available port starting at 7860.
-            server_name: to make app accessible on local network, set this to "0.0.0.0". Can be set by environment variable GRADIO_SERVER_NAME. If None, will use "127.0.0.1".
-            show_tips: if True, will occasionally show tips about new Gradio features
-            enable_queue: DEPRECATED (use .queue() method instead.) if True, inference requests will be served through a queue instead of with parallel threads. Required for longer inference times (> 1min) to prevent timeout. The default option in HuggingFace Spaces is True. The default option elsewhere is False.
-            max_threads: the maximum number of total threads that the Gradio app can generate in parallel. The default is inherited from the starlette library (currently 40). Applies whether the queue is enabled or not. But if queuing is enabled, this parameter is increaseed to be at least the concurrency_count of the queue.
-            width: The width in pixels of the iframe element containing the interface (used if inline=True)
-            height: The height in pixels of the iframe element containing the interface (used if inline=True)
-            encrypt: DEPRECATED. Has no effect.
-            favicon_path: If a path to a file (.png, .gif, or .ico) is provided, it will be used as the favicon for the web page.
-            ssl_keyfile: If a path to a file is provided, will use this as the private key file to create a local server running on https.
-            ssl_certfile: If a path to a file is provided, will use this as the signed certificate for https. Needs to be provided if ssl_keyfile is provided.
-            ssl_keyfile_password: If a password is provided, will use this with the ssl certificate for https.
-            quiet: If True, suppresses most print statements.
-            show_api: If True, shows the api docs in the footer of the app. Default True. If the queue is enabled, then api_open parameter of .queue() will determine if the api docs are shown, independent of the value of show_api.
-            file_directories: List of directories that gradio is allowed to serve files from (in addition to the directory containing the gradio python file). Must be absolute paths. Warning: any files in these directories or its children are potentially accessible to all users of your app.
-        Returns:
-            app: FastAPI app object that is running the demo
-            local_url: Locally accessible link to the demo
-            share_url: Publicly accessible link to the demo (if share=True, otherwise None)
-        Example: (Blocks)
-            import gradio as gr
-            def reverse(text):
-                return text[::-1]
-            with gr.Blocks() as demo:
-                button = gr.Button(value="Reverse")
-                button.click(reverse, gr.Textbox(), gr.Textbox())
-            demo.launch(share=True, auth=("username", "password"))
-        Example:  (Interface)
-            import gradio as gr
-            def reverse(text):
-                return text[::-1]
-            demo = gr.Interface(reverse, "text", "text")
-            demo.launch(share=True, auth=("username", "password"))
+参数:
+inline: 是否在界面中内联显示iframe。在python笔记本中默认为True；否则为False。
+inbrowser: 是否在默认浏览器中自动启动界面的新选项卡。
+share: 是否为界面创建可公开共享的链接。创建SSH隧道以使您的UI可以从任何地方访问。如果未提供，则每次都会默认设置为False，除非在Google Colab中运行。当本地主机不可访问（例如Google Colab）时，不支持将share=False设置为。
+debug: 如果为True，则阻止主线程运行。在Google Colab中运行时，这是需要打印单元格输出中的错误的。
+auth: 如果提供，则需要用户名和密码（或用户名-密码元组列表）才能访问界面。也可以提供函数，该函数接受用户名和密码并返回True，如果登录有效。
+auth_message: 如果提供，则在登录页面上提供HTML消息。
+prevent_thread_lock: 如果为True，则在服务器运行时，界面将阻止主线程。
+show_error: 如果为True，则在警报模态窗口中显示界面中的任何错误，并打印在浏览器控制台日志中
+server_port: 将在此端口（如果有）上启动gradio应用程序。可以通过环境变量GRADIO_SERVER_PORT设置。如果为None，则将从7860开始搜索可用端口。
+server_name: 要使应用程序在本地网络上可访问，请将其设置为“0.0.0.0”。可以通过环境变量GRADIO_SERVER_NAME设置。如果为None，则使用“127.0.0.1”。
+show_tips: 如果为True，则会偶尔显示有关新Gradio功能的提示
+enable_queue: 已弃用（改用.queue()方法）。如果为True，则推断请求将通过队列而不是并行线程进行服务。对于较长的推理时间（> 1min），需要此选项以防止超时。在HuggingFace Spaces中的默认选项为True。其他地方的默认选项为False。
+max_threads: Gradio应用程序可以并行生成的总线程数的最大值。默认继承自starlette库（当前为40）。无论是否启用队列，都适用。但是，如果启用排队，则将增加此参数至少为队列的concurrency_count。
+width: 包含界面的iframe元素的像素宽度（如果inline=True）
+height: 包含界面的iframe元素的像素高度（如果inline=True）
+encrypt: 已弃用。没有效果。
+favicon_path: 如果提供了一个文件路径（.png、.gif或.ico文件），则将其用作网页的favicon。
+ssl_keyfile: 如果提供了文件路径，则将其用作创建在https上运行的本地服务器的私钥文件。
+ssl_certfile: 如果提供了文件路径，则将用其作为https的已签名证书。如果提供了ssl_keyfile，则需要提供此项。
+ssl_keyfile_password: 如果提供了密码，则将其与https证书一起使用。
+quiet: 如果为True，则抑制大多数打印语句。
+show_api: 如果为True，则在应用程序底部显示API文档。默认值为True。如果启用了队列，则.queue()的api_open参数将确定是否显示api文档，而与show_api的值无关。
+file_directories: 允许Gradio从中提供文件的目录列表（除了包含gradio python文件的目录）。必须是绝对路径。警告：这些目录或其子级中的任何文件都可能可被您应用程序的所有用户访问到。
         """
         self.dev_mode = False
         if (
